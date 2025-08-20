@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Theracell"
+rootProject.name = "Therecell"
 include(":app")

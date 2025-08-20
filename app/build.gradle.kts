@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.theracell"
+    namespace = "com.example.therecell"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.theracell"
+        applicationId = "com.example.therecell"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

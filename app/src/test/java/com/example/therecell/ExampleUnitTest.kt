@@ -1,4 +1,4 @@
-package com.example.theracell
+package com.example.therecell
 
 import org.junit.Test
 

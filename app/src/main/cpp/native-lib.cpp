@@ -16,7 +16,7 @@
 #include <cstdint>
 #include <string>
 
-#define LOG_TAG "theracell"
+#define LOG_TAG "therecell"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
 const int LOOPER_ID_USER = 3;
@@ -32,7 +32,7 @@ const float SENSOR_FILTER_ALPHA = 0.1f;
  *    for Android-N and before, when compiling with NDK-r15
  */
 #include <dlfcn.h>
-const char *kPackageName = "com.android.theracell";
+const char *kPackageName = "com.android.therecell";
 ASensorManager *AcquireASensorManagerInstance(void) {
     typedef ASensorManager *(*PF_GETINSTANCEFORPACKAGE)(const char *name);
     void *androidHandle = dlopen("libandroid.so", RTLD_NOW);
@@ -244,32 +244,32 @@ sensorgraph gSensorGraph;
 
 extern "C" {
 JNIEXPORT void JNICALL
-Java_com_example_theracell_MainActivity_init(
-        JNIEnv *env, jclass type, jobject assetManager) {
+Java_com_example_therecell_MainActivity_init(
+        JNIEnv *env, jobject type, jobject assetManager) {
     (void)type;
     AAssetManager *nativeAssetManager = AAssetManager_fromJava(env, assetManager);
     gSensorGraph.init(nativeAssetManager);
 }
 
 JNIEXPORT void JNICALL
-Java_com_example_theracell_MainActivity_surfaceCreated(
-        JNIEnv *env, jclass type) {
+Java_com_example_therecell_MainActivity_surfaceCreated(
+        JNIEnv *env, jobject type) {
     (void)env;
     (void)type;
     gSensorGraph.surfaceCreated();
 }
 
 JNIEXPORT void JNICALL
-Java_com_example_theracell_MainActivity_surfaceChanged(
-        JNIEnv *env, jclass type, jint width, jint height) {
+Java_com_example_therecell_MainActivity_surfaceChanged(
+        JNIEnv *env, jobject type, jint width, jint height) {
     (void)env;
     (void)type;
     gSensorGraph.surfaceChanged(width, height);
 }
 
 JNIEXPORT void JNICALL
-Java_com_example_theracell_MainActivity_drawFrame(
-        JNIEnv *env, jclass type) {
+Java_com_example_therecell_MainActivity_drawFrame(
+        JNIEnv *env, jobject type) {
     (void)env;
     (void)type;
     gSensorGraph.update();
@@ -277,16 +277,16 @@ Java_com_example_theracell_MainActivity_drawFrame(
 }
 
 JNIEXPORT void JNICALL
-Java_com_example_theracell_MainActivity_pause(JNIEnv *env,
-                                                                jclass type) {
+Java_com_example_therecell_MainActivity_pause(
+        JNIEnv *env, jobject type) {
     (void)env;
     (void)type;
     gSensorGraph.pause();
 }
 
 JNIEXPORT void JNICALL
-Java_com_example_theracell_MainActivity_resume(JNIEnv *env,
-                                                                 jclass type) {
+Java_com_example_therecell_MainActivity_resume(
+        JNIEnv *env, jobject type) {
     (void)env;
     (void)type;
     gSensorGraph.resume();

@@ -1,12 +1,8 @@
-package com.example.theracell
+package com.example.therecell
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.TextView
-import com.example.theracell.databinding.ActivityMainBinding
 import android.opengl.GLSurfaceView
-import android.opengl.GLSurfaceView.Renderer
-import android.opengl.GLES20
 import android.content.res.AssetManager
 import javax.microedition.khronos.opengles.GL10
 import javax.microedition.khronos.egl.EGLConfig
@@ -15,7 +11,7 @@ import javax.microedition.khronos.egl.EGLConfig
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        init { System.loadLibrary("theracell") }
+        init { System.loadLibrary("therecell") }
     }
 
     private external fun init(assetManager: AssetManager)
@@ -30,7 +26,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
-        System.loadLibrary("theracell")
+        System.loadLibrary("therecell")
 
 
 
