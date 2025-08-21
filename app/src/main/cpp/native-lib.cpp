@@ -27,8 +27,9 @@
 const int GYRO_MODE = 0;
 const int ACCEL_MODE = 1;
 const int PROX_MODE = 2;
+const int POS_MODE = 3;
 
-const int SENSOR_MODE = PROX_MODE;
+const int SENSOR_MODE = ACCEL_MODE;
 
 const int LOOPER_ID_USER = 3;
 const int SENSOR_HISTORY_LENGTH = 100;
@@ -82,7 +83,6 @@ class sensorgraph {
     GLuint uFragColorHandle;
     GLfloat xPos[SENSOR_HISTORY_LENGTH];
 
-
     struct Vec3 {
         GLfloat x, y, z;
     };
@@ -100,6 +100,9 @@ class sensorgraph {
     float proxData[SENSOR_HISTORY_LENGTH]{};
     float proxFilter = 0.f;
     int proxIndex = 0;
+
+    float velocityZ = 0.f;
+    float posZ = 0.f;
 
     ma_waveform sineWave;
     ma_device_config deviceConfig;
@@ -305,6 +308,21 @@ public:
         accelData[SENSOR_HISTORY_LENGTH + accelIndex] = accelFilter;
         accelIndex = (accelIndex + 1) % SENSOR_HISTORY_LENGTH;
 
+        float dt = 1.0f / SENSOR_REFRESH_RATE_HZ;
+        velocityZ += accelFilter.z * dt;
+
+        if (fabs(accelFilter.x) < 0.05f &&
+            fabs(accelFilter.y) < 0.05f &&
+            fabs(accelFilter.z) < 0.05f &&
+            fabs(gyroFilter.x) < 0.01f &&
+            fabs(gyroFilter.y) < 0.01f &&
+            fabs(gyroFilter.z) < 0.01f) {
+            velocityZ = 0.f;  // stationary correction
+        }
+
+
+        posZ += velocityZ * dt;
+
         // --- Gyroscope (rad/s) ---
         if (gyroscope && gyroscopeEventQueue) {
             while (ASensorEventQueue_getEvents(gyroscopeEventQueue, &event, 1) > 0) {
@@ -349,6 +367,32 @@ public:
                 float minFreq = 200.f, maxFreq = 1000.f;
                 float t = (std::fmin(std::fmax(prox, pMin), pMax) - pMin) / (pMax - pMin);
                 float freq = minFreq + t * (maxFreq - minFreq);
+                ma_waveform_set_frequency(&sineWave, freq);
+            }
+            else if (SENSOR_MODE == POS_MODE) {
+                float posMin = 0.0f, posMax = 5.0f;
+                float minFreq = 200.f, maxFreq = 1000.f;
+                float t = (std::fmin(std::fmax(posZ, posMin), posMax) - posMin) / (posMax - posMin);
+                float freq = minFreq + t * (maxFreq - minFreq);
+                ma_waveform_set_frequency(&sineWave, freq);
+            }
+            else if (SENSOR_MODE == ACCEL_MODE) {
+                float accelX = fabs(accelFilter.x);
+                accelX = ma_clamp(accelX, 0.0f, 5.0f);
+
+                float accelZ = ma_clamp(accelFilter.z, -5.0f, 5.0f);
+
+                float minAmp = 0.0f, maxAmp = 5.0f;
+                float minFreq = 200.f, maxFreq = 1000.f;
+
+// Amplitude from accelX
+                float amp = (accelX - minAmp) / (maxAmp - minAmp);
+
+// Frequency from accelZ
+                float t = (accelZ - minAmp) / (maxAmp - minAmp);
+                float freq = minFreq + t * (maxFreq - minFreq);
+
+                ma_waveform_set_amplitude(&sineWave, amp);
                 ma_waveform_set_frequency(&sineWave, freq);
             }
         }
