@@ -15,6 +15,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private external fun init(assetManager: AssetManager)
+
+    private external fun initAudio()
     private external fun surfaceCreated()
     private external fun surfaceChanged(width: Int, height: Int)
     private external fun drawFrame()
@@ -28,6 +30,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         System.loadLibrary("therecell")
 
+        initAudio();  // start sine wave
 
 
         glSurfaceView = GLSurfaceView(this)
