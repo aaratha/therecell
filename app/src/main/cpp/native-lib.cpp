@@ -83,7 +83,6 @@ class sensorgraph {
   ma_device device;
   bool audioInitialized = false;
 
-
 public:
   sensorgraph() : sensorDataIndex(0) {}
 
@@ -247,6 +246,17 @@ public:
     sensorData[sensorDataIndex] = sensorDataFilter;
     sensorData[SENSOR_HISTORY_LENGTH + sensorDataIndex] = sensorDataFilter;
     sensorDataIndex = (sensorDataIndex + 1) % SENSOR_HISTORY_LENGTH;
+
+      // Map x acceleration to a reasonable frequency range
+      // Example: map -10..10 m/s² to 200Hz..1000Hz
+      if (audioInitialized) {
+          float accelY = sensorDataFilter.y;
+          float minFreq = 200.f;
+          float maxFreq = 1000.f;
+          float clampedY = fmaxf(fminf(accelY, 10.f), -10.f); // clamp to [-10,10]
+          float freq = ((clampedY + 10.f) / 20.f) * (maxFreq - minFreq) + minFreq;
+          ma_waveform_set_frequency(&sineWave, freq);
+      }
   }
 
   void render() {

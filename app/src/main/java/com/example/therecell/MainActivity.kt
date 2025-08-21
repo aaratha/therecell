@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         System.loadLibrary("therecell")
 
-        initAudio();  // start sine wave
+        initAudio()  // start sine wave
 
 
         glSurfaceView = GLSurfaceView(this)
