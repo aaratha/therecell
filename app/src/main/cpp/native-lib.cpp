@@ -24,6 +24,12 @@
 #define DEVICE_CHANNELS     2
 #define DEVICE_SAMPLE_RATE  48000
 
+const int GYRO_MODE = 0;
+const int ACCEL_MODE = 1;
+const int PROX_MODE = 2;
+
+const int SENSOR_MODE = PROX_MODE;
+
 const int LOOPER_ID_USER = 3;
 const int SENSOR_HISTORY_LENGTH = 100;
 const int SENSOR_REFRESH_RATE_HZ = 100;
@@ -64,8 +70,10 @@ class sensorgraph {
     ASensorManager *sensorManager;
     const ASensor *accelerometer;
     const ASensor *gyroscope;                 // NEW
+    const ASensor *proximity;                 // NEW
     ASensorEventQueue *accelerometerEventQueue;
     ASensorEventQueue *gyroscopeEventQueue;   // NEW
+    ASensorEventQueue *proximityEventQueue;   // NEW
     ALooper *looper;
 
     GLuint shaderProgram;
@@ -88,6 +96,10 @@ class sensorgraph {
     Vec3 gyroData[SENSOR_HISTORY_LENGTH * 2]{};  // duplicated buffer trick
     Vec3 gyroFilter{0.f, 0.f, 0.f};
     int gyroIndex = 0;
+
+    float proxData[SENSOR_HISTORY_LENGTH]{};
+    float proxFilter = 0.f;
+    int proxIndex = 0;
 
     ma_waveform sineWave;
     ma_device_config deviceConfig;
@@ -129,6 +141,8 @@ public:
         gyroscope = ASensorManager_getDefaultSensor(sensorManager, ASENSOR_TYPE_GYROSCOPE); // NEW
         // gyroscope can be null on some devices; code handles absence gracefully.
 
+        proximity = ASensorManager_getDefaultSensor(sensorManager, ASENSOR_TYPE_PROXIMITY); // NEW
+
         looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
         assert(looper != nullptr);
 
@@ -154,6 +168,16 @@ public:
             status = ASensorEventQueue_setEventRate(gyroscopeEventQueue, gyroscope, SENSOR_REFRESH_PERIOD_US);
             assert(status >= 0);
             (void)status;
+        }
+
+        if (proximity) {
+            proximityEventQueue = ASensorManager_createEventQueue(
+                    sensorManager, looper, LOOPER_ID_USER + 2, NULL, NULL);
+            assert(proximityEventQueue != nullptr);
+            auto status = ASensorEventQueue_enableSensor(proximityEventQueue, proximity);
+            assert(status >= 0);
+            status = ASensorEventQueue_setEventRate(proximityEventQueue, proximity, SENSOR_REFRESH_PERIOD_US);
+            assert(status >= 0);
         }
 
         generateXPos();
@@ -296,16 +320,37 @@ public:
             gyroIndex = (gyroIndex + 1) % SENSOR_HISTORY_LENGTH;
         }
 
+        if (proximity && proximityEventQueue) {
+            while (ASensorEventQueue_getEvents(proximityEventQueue, &event, 1) > 0) {
+                if (event.type == ASENSOR_TYPE_PROXIMITY) {
+                    proxFilter = a * event.distance + (1.0f - a) * proxFilter;
+                }
+            }
+            proxData[proxIndex % SENSOR_HISTORY_LENGTH] = proxFilter; // Apply modulo here
+            // No need to wrap around for proxData as it's not a circular buffer for rendering (yet)
+            proxIndex = (proxIndex + 1); // Allow proxIndex to grow, then take modulo when accessing
+        }
+
         // Map x acceleration to a reasonable frequency range
         // Example: map -10..10 m/s² to 200Hz..1000Hz
         if (audioInitialized) {
-            float gyroZ = std::fabs(gyroFilter.z);     // rad/s
-            // Map 0..5 rad/s → 0.05..0.6 (clamped)
-            float gMin = 0.0f, gMax = 5.0f;
-            float minFreq = 200.f, maxFreq = 1000.f;
-            float t = (std::fmin(std::fmax(gyroZ, gMin), gMax) - gMin) / (gMax - gMin);
-            float freq = minFreq + t * (maxFreq - minFreq);
-            ma_waveform_set_frequency(&sineWave, freq);
+            if (SENSOR_MODE == GYRO_MODE) {
+                float gyroZ = std::fabs(gyroFilter.z);     // rad/s
+                // Map 0..5 rad/s → 0.05..0.6 (clamped)
+                float gMin = 0.0f, gMax = 5.0f;
+                float minFreq = 200.f, maxFreq = 1000.f;
+                float t = (std::fmin(std::fmax(gyroZ, gMin), gMax) - gMin) / (gMax - gMin);
+                float freq = minFreq + t * (maxFreq - minFreq);
+                ma_waveform_set_frequency(&sineWave, freq);
+            }
+            else if (SENSOR_MODE == PROX_MODE) {
+                float prox = proxFilter;
+                float pMin = 0.0f, pMax = 5.0f;
+                float minFreq = 200.f, maxFreq = 1000.f;
+                float t = (std::fmin(std::fmax(prox, pMin), pMax) - pMin) / (pMax - pMin);
+                float freq = minFreq + t * (maxFreq - minFreq);
+                ma_waveform_set_frequency(&sineWave, freq);
+            }
         }
     }
 
