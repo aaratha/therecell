@@ -110,7 +110,7 @@ public:
     sensorManager = AcquireASensorManagerInstance();
     assert(sensorManager != NULL);
     accelerometer = ASensorManager_getDefaultSensor(sensorManager,
-                                                    ASENSOR_TYPE_ACCELEROMETER);
+                                                    ASENSOR_TYPE_LINEAR_ACCELERATION); //ASENSOR_TYPE_ACCELEROMETER);
     assert(accelerometer != NULL);
     looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
     assert(looper != NULL);
